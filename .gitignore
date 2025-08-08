@@ -59,6 +59,7 @@ bucket_scanner
 bucket_scanner_v2
 grayhat_scraper
 s3scanner
+s3eker
 working_scanner
 *.exe
 *.exe~
@@ -66,5 +67,6 @@ working_scanner
 *.so
 *.dylib
 
-# Go build artifacts
-go.sum
+# Project data (do not publish)
+buckets/
+merged_deduplicated.json
