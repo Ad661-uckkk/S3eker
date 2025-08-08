@@ -69,7 +69,7 @@ func init() {
 	flag.StringVar(&outputFile, "o", "merged_deduplicated.json", "Output JSON file (default: merged_deduplicated.json)")
 	flag.IntVar(&concurrency, "c", 200, "Max concurrent workers")
 	flag.IntVar(&rateLimit, "r", 100, "Requests per second limit")
-	flag.BoolVar(&guiMode, "gui", true, "Run with terminal UI that shows buckets in real-time")
+	flag.BoolVar(&guiMode, "gui", false, "Run with terminal UI that shows buckets in real-time (disabled by default)")
 	flag.StringVar(&sourceURL, "url", "https://buckets.grayhatwarfare.com/random/buckets", "Source page URL to scrape")
 	flag.IntVar(&minFiles, "min", 1000, "Minimum file count to accept a bucket")
 }
@@ -93,12 +93,8 @@ func main() {
 		cancel()
 	}()
 
-	if guiMode {
-		// Initialize channel for GUI updates
-		guiUpdates = make(chan Bucket, 1024)
-		startGUI(ctx, cancel)
-		return
-	}
+	// GUI mode removed: always run in CLI mode
+	guiMode = false
 
 	// CLI mode (no GUI)
 	bar = progressbar.NewOptions(-1,

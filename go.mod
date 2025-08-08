@@ -8,6 +8,7 @@ require (
 	github.com/json-iterator/go v1.1.12
 	github.com/rivo/tview v0.0.0-20250625164341-a4a78f1e05cb
 	github.com/schollz/progressbar/v3 v3.18.0
+	howett.net/plist v1.0.1
 )
 
 require (

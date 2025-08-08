@@ -26,6 +26,7 @@ __pycache__/
 
 # Node
 node_modules/
+package-lock.json
 
 # VSCode
 .vscode/
@@ -62,6 +63,7 @@ s3scanner
 s3eker
 grayhat-scraper
 working_scanner
+s3eker-scraper
 *.exe
 *.exe~
 *.dll
@@ -71,3 +73,23 @@ working_scanner
 # Project data (do not publish)
 buckets/
 merged_deduplicated.json
+
+# Go binaries
+s3eker
+s3eker-fbscan
+
+# Eleventy/Node
+node_modules/
+package-lock.json
+
+# Built docs site
+/docs/s3eker/site/
+
+# Reports and temp exports
+fb_report_*.json
+fb_report_*.md
+
+# Editors/OS
+.DS_Store
+.idea/
+.vscode/

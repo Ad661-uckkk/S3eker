@@ -1,8 +1,8 @@
-# S3eker
-
 <div align="center">
 
-Real‑time terminal UI (TUI) for discovering public cloud buckets. Streams results live while you scrape, deduplicates on the fly, and persists to JSON.
+# S3eker
+
+Real‑time terminal toolkit for open bucket discovery and Firebase configuration checks.
 
 [![Go](https://img.shields.io/badge/Go-1.21+-00ADD8?logo=go&logoColor=white)](https://go.dev)
 [![Status](https://img.shields.io/badge/status-beta-yellow)](#-roadmap)
@@ -13,81 +13,93 @@ Real‑time terminal UI (TUI) for discovering public cloud buckets. Streams resu
 
 ---
 
-### Why S3eker?
-Investigating open buckets across providers often involves brittle scripts and poor feedback loops. S3eker gives you a responsive terminal interface, a steady stream of findings, and guardrails to keep results meaningful and reproducible.
+## What’s inside
+- Interactive launcher with colorful CLI and ASCII banner
+- Bucket scraper (TUI): streams results, live filters, adjustable thresholds
+- Firebase checker (wizard): probes auth/RTDB/Storage/Firestore, prints a formatted table, optional Markdown export
 
-## ✨ Features
-- Live TUI with continuously streaming results
-- Adjustable minimum file threshold (drop noise, keep signal)
-- Runtime configuration (change source URL without restart)
-- Automatic in‑memory deduplication and JSON persistence
-- CLI mode for headless servers and automation
+> Default scraping target is GrayhatWarfare Random Buckets. You can set a custom URL.
 
-> Note: By default S3eker targets GrayhatWarfare’s Random Buckets page. You can point it at another compatible listing with `-url`.
-
-## 📦 Installation
+## Quickstart
 
 Build from source:
 ```bash
-go build -o s3eker .
-sudo mv s3eker /usr/local/bin/
+go build -o s3eker ./cmd/launcher
+go build -o s3eker-scraper ./cmd/scraper
+go build -o s3eker-fbscan ./cmd/fbscan
+./s3eker
 ```
 
-Run without install:
+Launcher options:
+1) Scrape Grayhat for new open buckets (CLI)
+2) Check Firebase configuration (wizard)
+3) Close
+
+The wizard accepts a `GoogleService-Info.plist` or prompts for API key, project ID, database URL, and storage bucket.
+
+Example Firebase run (wizard):
+```
+✔ AnonymousAuth       PASS   status=404
+✔ SignUp              PASS   status=400
+✗ RTDBPublicRead      FAIL   /.json readable (200)
+✗ StoragePublicList   FAIL   listable (200)
+✗ StorageWrite        FAIL   write allowed (200)
+✔ StorageDelete       PASS   status=204
+```
+
+Exports:
+- JSON report saved to the chosen `-out`
+- Optional Markdown summary (`.md`) right next to the JSON
+
+## Flags (advanced)
+```text
+./s3eker-fbscan -fb-plist /path/GoogleService-Info.plist -out fb_report.json
+  -fb-api-key string         Firebase API key
+  -fb-project-id string      Firebase project id
+  -fb-rtdb-url string        Firebase Realtime Database URL
+  -fb-storage-bucket string  Firebase Storage bucket (e.g., myapp.appspot.com)
+  -fb-plist string           Path to GoogleService-Info.plist / Info.plist
+  -out string                Output report file (JSON)
+```
+
+Global UX flags (launcher will auto-detect):
+- `NO_COLOR=1` to disable colors
+- Non‑TTY output switches to plain ASCII and minimal formatting automatically
+
+## Build & Install
 ```bash
-go run .
+go build -o s3eker ./cmd/launcher
+go build -o s3eker-scraper ./cmd/scraper
+go build -o s3eker-fbscan ./cmd/fbscan
+
+# Install system-wide
+sudo install -m 0755 s3eker /usr/local/bin/s3eker
+sudo install -m 0755 s3eker-scraper /usr/local/bin/s3eker-scraper
+sudo install -m 0755 s3eker-fbscan /usr/local/bin/s3eker-fbscan
 ```
 
-## 🚀 Quick Start
+## Exit codes
+- `0` no failures
+- `2` warnings only
+- `3` failures present (useful for CI gates)
 
-### GUI (default)
-```bash
-s3eker
-```
-Key bindings:
-- `q` Quit
-- `u` Set source URL
-- `m` Set minimum file count
+## Troubleshooting
+- No results from scraper? Lower threshold (`m`), confirm HTTP code progress updates.
+- If upstream HTML changes, selectors may need small updates.
+- For Firebase probes, network errors are shown as INFO and do not stop other probes.
 
-The status bar shows: host, pages fetched, new/total buckets, last HTTP status, error count, and the current `min` threshold. It refreshes every second.
+## Roadmap
+- Pluggable sources (GCS/Azure listings)
+- CSV/NDJSON exporters
+- Rules fingerprinting and hints
+- Settings file (`~/.config/s3eker/config.yaml`) for theme/output defaults
 
-### CLI / Headless
-```bash
-s3eker -gui=false \
-  -url="https://buckets.grayhatwarfare.com/random/buckets" \
-  -min=500 \
-  -o merged_deduplicated.json
-```
+## Contributing
+PRs welcome. Keep diffs focused and add a brief before/after note. Run `go build` locally.
 
-Flags:
-- `-url` string: Source list page (default: random buckets)
-- `-min` int: Minimum file count to include (default: 1000)
-- `-o` string: Output JSON file (default: `merged_deduplicated.json`)
-- `-gui` bool: Enable TUI (default: true)
-
-Output is written to `merged_deduplicated.json` in the working directory. This file and any sample data under `buckets/` are intentionally excluded from version control for public releases.
-
-## 🧰 Troubleshooting
-- Seeing no results? Lower the threshold with `m` (GUI) or `-min` (CLI) and watch the status counters to verify pages are fetched.
-- If the upstream HTML changes, selectors may need minor tweaks.
-- Respect provider rate limits and terms of service.
-
-## 🗺 Roadmap
-- Pluggable sources (multi‑provider listings)
-- Export formats (CSV/NDJSON)
-- Rule‑based highlighting (keywords, domains)
-- Optional disk‑backed deduplication cache
-
-## 🤝 Contributing
-Contributions welcome! If you have an idea or find a bug:
-- Open an issue describing the problem or proposal
-- Submit a PR with a clear description and minimal diff
-
-Before committing, run `go build` (and any added tests) to ensure things compile cleanly.
-
-## 🔐 Ethics & Legal
-Use only where you have authorization. Do not access, download, or distribute sensitive data. You are fully responsible for complying with all applicable laws, terms, and policies.
+## Ethics & Legal
+Use only with authorization. Do not access or retain sensitive data. You are responsible for legal compliance.
 
 ---
 
-Made with Go. If this project helps you, consider sharing feedback or ideas for the roadmap.
+Made with Go. Feedback and ideas welcome.
