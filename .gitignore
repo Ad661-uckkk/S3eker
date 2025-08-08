@@ -60,6 +60,7 @@ bucket_scanner_v2
 grayhat_scraper
 s3scanner
 s3eker
+grayhat-scraper
 working_scanner
 *.exe
 *.exe~
