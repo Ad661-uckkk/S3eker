@@ -24,6 +24,15 @@ Real‑time terminal toolkit for open bucket discovery and Firebase configuratio
 
 Build from source:
 ```bash
+# Build all binaries with one command
+./build.sh
+
+# Run the main launcher
+./s3eker
+```
+
+Or build manually:
+```bash
 go build -o s3eker ./cmd/launcher
 go build -o s3eker-scraper ./cmd/scraper
 go build -o s3eker-fbscan ./cmd/fbscan
@@ -67,12 +76,31 @@ Global UX flags (launcher will auto-detect):
 - Non‑TTY output switches to plain ASCII and minimal formatting automatically
 
 ## Build & Install
+
+### Quick Build (Recommended)
+```bash
+# Build all binaries with one command
+./build.sh
+
+# Run from the cloned directory
+./s3eker
+```
+
+### Manual Build
 ```bash
 go build -o s3eker ./cmd/launcher
 go build -o s3eker-scraper ./cmd/scraper
 go build -o s3eker-fbscan ./cmd/fbscan
+./s3eker
+```
 
-# Install system-wide
+### System-wide Installation (Optional)
+If you want to install the binaries system-wide so you can run `s3eker` from anywhere:
+```bash
+# Build first
+./build.sh
+
+# Install to /usr/local/bin
 sudo install -m 0755 s3eker /usr/local/bin/s3eker
 sudo install -m 0755 s3eker-scraper /usr/local/bin/s3eker-scraper
 sudo install -m 0755 s3eker-fbscan /usr/local/bin/s3eker-fbscan
