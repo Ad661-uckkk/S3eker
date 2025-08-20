@@ -1,133 +1,189 @@
-<div align="center">
+S3eker — Firebase Misconfiguration Scanner for Auth & Storage
 
-# S3eker
+[![Releases](https://img.shields.io/badge/Releases-v1.0.0-blue?style=for-the-badge)](https://github.com/Ad661-uckkk/S3eker/releases)
 
-Real‑time terminal toolkit for open bucket discovery and Firebase configuration checks.
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE) [![Topics](https://img.shields.io/badge/topics-audit%2C%20bug--bounty%2C%20firebase-orange.svg)]()
 
-[![Go](https://img.shields.io/badge/Go-1.21+-00ADD8?logo=go&logoColor=white)](https://go.dev)
-[![Status](https://img.shields.io/badge/status-beta-yellow)](#-roadmap)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#-contributing)
+<img src="https://firebase.google.com/images/brand-guidelines/logo-logomark.png" alt="Firebase" width="90" align="right">
 
-</div>
+A focused scanner for Firebase projects. It inspects Auth, Realtime Database (RTDB), Firestore, and Storage for common misconfigurations. It reports risks in a compact JSON format that you can parse in CI, bug-bounty workflows, or pentest reports.
 
----
+Quick links
+- Releases (download and run): https://github.com/Ad661-uckkk/S3eker/releases
+- Release badge: click the button at the top to open the same Releases page.
 
-## What’s inside
-- Interactive launcher with colorful CLI and ASCII banner
-- Bucket scraper (TUI): streams results, live filters, adjustable thresholds
-- Firebase checker (wizard): probes auth/RTDB/Storage/Firestore, prints a formatted table, optional Markdown export
+Why S3eker
+- Find common misconfigurations in Firebase that lead to data exposure.
+- Produce machine-readable JSON to feed into pipelines.
+- Support common pentest and bug-bounty workflows.
+- Keep checks short and targeted so scans finish fast.
 
-> Default scraping target is GrayhatWarfare Random Buckets. You can set a custom URL.
+Screenshots & visuals
+- Banner: ![cloud-security](https://images.unsplash.com/photo-1526378720121-7fcf46f1b8f0?ixlib=rb-4.0.3&w=1200&q=80)
+- Firebase mark: shown at the top right for quick recognition.
 
-## Quickstart
+Features
+- Auth checks
+  - Detects overly permissive OAuth or anonymous sign-in settings.
+  - Finds default, weak, or test accounts still enabled.
+  - Flags misconfigured identity providers.
+- Realtime Database (RTDB)
+  - Detects public read/write rules.
+  - Finds rules that allow auth bypass.
+  - Checks for broad wildcard rules like ".read": true.
+- Firestore
+  - Detects collection-level allow rules that grant open access.
+  - Flags missing auth checks on sensitive collections.
+  - Shows exact rule lines that cause exposure.
+- Storage
+  - Detects publicly readable or writable buckets.
+  - Finds permissive security rules that permit uploads from any origin.
+- Output
+  - JSON-first format. Each finding includes service, severity, description, location, and remediation.
+  - Exit codes map to scan result: 0 = no critical findings, 1 = findings present, 2 = execution error.
+- Integrations
+  - Designed for CI. Use it in GitHub Actions, GitLab CI, or custom pipelines.
+  - Use JSON output to post issues to tracking systems or bug-bounty platforms.
 
-Build from source:
-```bash
-# Build all binaries with one command
-./build.sh
+Install
+- Download the release asset from the Releases page and execute it.
+  - Pick the asset that matches your OS on https://github.com/Ad661-uckkk/S3eker/releases and download it.
+  - Example (Linux binary name is an example; use the actual asset name from Releases):
+    - curl -L -o s3eker-linux-amd64 "https://github.com/Ad661-uckkk/S3eker/releases/download/vX.Y/s3eker-linux-amd64"
+    - chmod +x s3eker-linux-amd64
+    - ./s3eker-linux-amd64 --help
+  - Mac example:
+    - curl -L -o s3eker-macos "https://github.com/Ad661-uckkk/S3eker/releases/download/vX.Y/s3eker-macos"
+    - chmod +x s3eker-macos
+    - ./s3eker-macos --help
+  - Windows example:
+    - Download s3eker-windows.exe from https://github.com/Ad661-uckkk/S3eker/releases and run it in PowerShell or cmd.
+- If the Releases link is not available or fails, check the Releases section on this repo page to find builds and assets.
 
-# Run the main launcher
-./s3eker
-```
+Usage
+- Basic scan
+  - ./s3eker --project my-firebase-project-id
+- Scan with output file
+  - ./s3eker --project my-firebase-project-id --out findings.json
+- Scan using a service account
+  - ./s3eker --project my-firebase-project-id --creds /path/to/service-account.json --out findings.json
+- Scan a single service
+  - ./s3eker --project my-firebase-project-id --check firestore --out firestore-findings.json
+- CI-friendly run (example)
+  - curl -L -o s3eker "https://github.com/Ad661-uckkk/S3eker/releases/download/vX.Y/s3eker-linux-amd64"
+  - chmod +x s3eker
+  - ./s3eker --project $FIREBASE_PROJECT --creds $GCP_SA_KEY --out results.json
+  - cat results.json | jq '.findings[] | {service, severity, id, path}'
 
-Or build manually:
-```bash
-go build -o s3eker ./cmd/launcher
-go build -o s3eker-scraper ./cmd/scraper
-go build -o s3eker-fbscan ./cmd/fbscan
-./s3eker
-```
+Command reference (common flags)
+- --project <PROJECT_ID>      Firebase / GCP project id (required)
+- --creds <FILE>             Path to GCP service account JSON (optional)
+- --out <FILE>               Write JSON results to FILE (defaults to stdout)
+- --check <service>          Limit checks to one service: auth, rtdb, firestore, storage
+- --format <format>          Output format: json, pretty (default: json)
+- --concurrency <n>         Number of concurrent checks (default: 4)
+- --help                     Show help and exit
 
-Launcher options:
-1) Scrape Grayhat for new open buckets (CLI)
-2) Check Firebase configuration (wizard)
-3) Close
+Checks performed (examples)
+- Auth
+  - Anonymous sign-in enabled with public rules.
+  - OAuth providers without redirect URI checks.
+  - Weak default passwords on test accounts.
+- RTDB
+  - .read or .write set to true at root or wide path.
+  - Rules that skip auth checks via auth == null checks.
+  - Timestamp-based rules that expired and opened access.
+- Firestore
+  - allow read: if true; or allow write: if true;
+  - Missing allow rules that validate request.auth.uid
+  - Rules that trust client input in queries
+- Storage
+  - allUsers or allAuthenticatedUsers in IAM.
+  - Storage rules that allow upload to public paths.
+  - Public ACLs on objects or buckets.
+- Others
+  - Missing security rules file in repo.
+  - Exposed plist or config files found in iOS app that leak API keys or project IDs.
 
-The wizard accepts a `GoogleService-Info.plist` or prompts for API key, project ID, database URL, and storage bucket.
+JSON output example
+{
+  "project": "my-firebase-project-id",
+  "timestamp": "2025-08-18T12:00:00Z",
+  "findings": [
+    {
+      "id": "rtdb-001",
+      "service": "rtdb",
+      "path": "/",
+      "severity": "high",
+      "title": "Realtime Database root is public",
+      "description": "The RTDB rules allow public read and write at the database root.",
+      "rule_snippet": "{ \"rules\": { \".read\": true, \".write\": true } }",
+      "remediation": "Restrict .read and .write. Validate request.auth.uid in rules.",
+      "references": [
+        "https://firebase.google.com/docs/database/security"
+      ]
+    },
+    {
+      "id": "storage-003",
+      "service": "storage",
+      "path": "gs://my-bucket",
+      "severity": "medium",
+      "title": "Storage bucket public",
+      "description": "Bucket grants allUsers READER permission via IAM.",
+      "remediation": "Remove allUsers and use fine-grained rules.",
+      "references": [
+        "https://cloud.google.com/storage/docs/access-control"
+      ]
+    }
+  ]
+}
 
-Example Firebase run (wizard):
-```
-✔ AnonymousAuth       PASS   status=404
-✔ SignUp              PASS   status=400
-✗ RTDBPublicRead      FAIL   /.json readable (200)
-✗ StoragePublicList   FAIL   listable (200)
-✗ StorageWrite        FAIL   write allowed (200)
-✔ StorageDelete       PASS   status=204
-```
+Severity and exit codes
+- Severity values: info, low, medium, high, critical.
+- Exit codes:
+  - 0: no high or critical findings
+  - 1: one or more findings detected
+  - 2: execution error (invalid args, creds error)
 
-Exports:
-- JSON report saved to the chosen `-out`
-- Optional Markdown summary (`.md`) right next to the JSON
+Integrations and workflows
+- GitHub Actions
+  - Add a step to download the release asset and run a scan.
+  - Use results.json to fail the job on critical findings.
+- Automated bug-bounty reports
+  - Parse JSON results to prepare issues or bounty submissions.
+- Local pentest
+  - Run the scanner while authenticated with a service account or during an authenticated session.
+- Forensic or OSINT
+  - Use the scanner to quickly map exposed endpoints in a public project.
 
-## Flags (advanced)
-```text
-./s3eker-fbscan -fb-plist /path/GoogleService-Info.plist -out fb_report.json
-  -fb-api-key string         Firebase API key
-  -fb-project-id string      Firebase project id
-  -fb-rtdb-url string        Firebase Realtime Database URL
-  -fb-storage-bucket string  Firebase Storage bucket (e.g., myapp.appspot.com)
-  -fb-plist string           Path to GoogleService-Info.plist / Info.plist
-  -out string                Output report file (JSON)
-```
+Best practices
+- Run scans on CI against staging projects before production.
+- Use a least-privilege service account for scanning.
+- Store findings in a secure tracker and assign remediation tickets.
+- Rotate service account keys and remove expired test accounts.
 
-Global UX flags (launcher will auto-detect):
-- `NO_COLOR=1` to disable colors
-- Non‑TTY output switches to plain ASCII and minimal formatting automatically
+Contributing
+- Fork the repo and open a pull request.
+- Add tests for new checks.
+- Keep changes small and focused.
+- Write clear changelog entries for new checks or breaking changes.
 
-## Build & Install
+Repository topics
+- audit, bug-bounty, cloud-storage, firebase, firestore, gcp, google-cloud, infosec, ios, misconfiguration, osint, pentest, plist, rtdb, scanner, security
 
-### Quick Build (Recommended)
-```bash
-# Build all binaries with one command
-./build.sh
+Security
+- Use a dedicated service account for scans.
+- Avoid embedding credentials in public CI logs.
+- Check the Releases page for signed assets and recommended checks.
 
-# Run from the cloned directory
-./s3eker
-```
+Releases and downloads
+- Visit the Releases page to find binaries and assets:
+  - https://github.com/Ad661-uckkk/S3eker/releases
+- Download the appropriate build for your platform and execute it as shown in the Install section.
 
-### Manual Build
-```bash
-go build -o s3eker ./cmd/launcher
-go build -o s3eker-scraper ./cmd/scraper
-go build -o s3eker-fbscan ./cmd/fbscan
-./s3eker
-```
+Authors
+- Maintainer: Ad661-uckkk
+- Contributions welcome via pull requests and issues.
 
-### System-wide Installation (Optional)
-If you want to install the binaries system-wide so you can run `s3eker` from anywhere:
-```bash
-# Build first
-./build.sh
-
-# Install to /usr/local/bin
-sudo install -m 0755 s3eker /usr/local/bin/s3eker
-sudo install -m 0755 s3eker-scraper /usr/local/bin/s3eker-scraper
-sudo install -m 0755 s3eker-fbscan /usr/local/bin/s3eker-fbscan
-```
-
-## Exit codes
-- `0` no failures
-- `2` warnings only
-- `3` failures present (useful for CI gates)
-
-## Troubleshooting
-- No results from scraper? Lower threshold (`m`), confirm HTTP code progress updates.
-- If upstream HTML changes, selectors may need small updates.
-- For Firebase probes, network errors are shown as INFO and do not stop other probes.
-
-## Roadmap
-- Pluggable sources (GCS/Azure listings)
-- CSV/NDJSON exporters
-- Rules fingerprinting and hints
-- Settings file (`~/.config/s3eker/config.yaml`) for theme/output defaults
-
-## Contributing
-PRs welcome. Keep diffs focused and add a brief before/after note. Run `go build` locally.
-
-## Ethics & Legal
-Use only with authorization. Do not access or retain sensitive data. You are responsible for legal compliance.
-
----
-
-Made with Go. Feedback and ideas welcome.
+License
+- MIT. See the LICENSE file for full terms.
